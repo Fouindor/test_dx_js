@@ -1,0 +1,173 @@
+<!doctype HTML>
+<title>Test codes DX</title>
+<h1>Page de test codes DX</h1>
+<h2>Code barre => Code DX</h2>
+<button onclick="resetCanvas(canvas_input, ctx_input)">Reset</button>
+<canvas id="dx_input_canvas"></canvas><br>
+<span id="valeur1">Valeur partie 1 = 0</span><br>
+<span id="valeur2">Valeur partie 2 = 0</span><br>
+<span id="valeur3">Code DX = 000000</span><br><br><br>
+<h2>Code DX => Code barre</h2>
+Code DX: <input type="text" id="DX_input" size="20" name="DX_input">
+<button onclick="renderCanvas()">Générer</button><br>
+<canvas id="dx_render_canvas"></canvas><br>
+<span id="dx_render_valeur1">Valeur partie 1 = 0</span><br>
+<span id="dx_render_valeur2">Valeur partie 2 = 0</span><br>
+<script>
+var canvas_input = document.getElementById('dx_input_canvas');
+var ctx_input = canvas_input.getContext("2d");
+var longueur = 10
+var hauteur = 40
+var xSize = 18
+var ySize = 2
+var valeur_bandes = [0,0,0,0,0,0,64,32,16,8,4,2,1,0,8,4,2,1]
+
+var canvas_render = document.getElementById('dx_render_canvas');
+var ctx_render = canvas_render.getContext("2d");
+
+var canvasCreate = function(canvas, w, h) {
+  canvas.width = w;
+  canvas.height = h;
+};
+
+function resetCanvas(canvas, ctx) {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  arr = genArray();
+  drawGrid(arr, canvas, ctx);
+  
+  document.getElementById("valeur1").textContent="Valeur partie 1 = 0";
+  document.getElementById("valeur2").textContent="Valeur partie 2 = 0";
+  document.getElementById("valeur3").textContent="Code DX = 0";
+}
+
+function genArray() {
+  var a = [];
+  for (i=0;i<xSize;i++) {
+    a[i] = [];
+    for (j=0;j<ySize;j++) {
+      a[i][j] = 0;
+    }
+  }
+  
+  a[0][0] = 1;
+  a[1][0] = 1;
+  a[2][0] = 1;
+  a[3][0] = 1;
+  a[4][0] = 1;
+  
+  a[6][0] = 1;
+  a[8][0] = 1;
+  a[10][0] = 1;
+  a[12][0] = 1;
+  a[14][0] = 1;
+  a[16][0] = 1;
+  
+  return a;
+}
+
+function renderCanvas(){
+	var input_dx = document.getElementById('DX_input').value;
+	var input_partie1 = Math.floor(input_dx/16);
+	var input_partie2 = input_dx - (16 * input_partie1);
+	var dx_array = genArray();
+	
+	document.getElementById("dx_render_valeur1").textContent="Valeur partie 1 = " + input_partie1;
+	document.getElementById("dx_render_valeur2").textContent="Valeur partie 2 = " + input_partie2;
+	
+   for (var i=6;i<13;i++) {
+	if (input_partie1 >= valeur_bandes[i])  {
+		dx_array[i][1] = 1;
+		input_partie1 = input_partie1 - valeur_bandes[i];
+	}
+   }
+  
+   for (var i=14;i<18;i++) {
+	if (input_partie2 >= valeur_bandes[i])  {
+		dx_array[i][1] = 1;
+		input_partie2 = input_partie2 - valeur_bandes[i];
+	}
+   }
+	
+	drawGrid(dx_array, canvas_render, ctx_render);
+}
+
+function drawGrid(arr, canvas, ctx) {
+  
+  for (var i=0;i<xSize;i++) {
+    for (var j=0;j<ySize;j++) {
+      ctx.beginPath();
+	  ctx.strokeStyle = '#555';
+ 
+      if (arr[i][j] === 1) {
+        ctx.fillStyle = '#000';
+        ctx.fillRect(i*longueur, j*hauteur, longueur, hauteur);
+      } else {
+        ctx.fillStyle = '#fff';
+        ctx.fillRect(i*longueur, j*hauteur, longueur, hauteur);
+      }
+      ctx.rect(i*longueur, j*hauteur, longueur, hauteur);
+      ctx.stroke();
+    }
+  }
+};
+
+var arr1 = genArray();
+canvasCreate(canvas_input, xSize*longueur, ySize*hauteur);
+drawGrid(arr1, canvas_input, ctx_input);
+
+var arr2 = genArray();
+canvasCreate(canvas_render, xSize*longueur, ySize*hauteur);
+drawGrid(arr2, canvas_render, ctx_render);
+
+function mouseClick(e) {
+
+  // Calcul de la position de la souris dans le canvas
+  var mouseX, mouseY;
+
+  if(e.offsetX) {
+    mouseX = e.offsetX;
+    mouseY = e.offsetY;
+  }
+  else if(e.layerX) {
+    mouseX = e.layerX;
+    mouseY = e.layerY;
+  }
+  
+  // Trouver la case cliquée
+  var gridX = Math.floor(mouseX / longueur);
+  var gridY = Math.floor(mouseY / hauteur);
+
+  // Remplir la case
+  var xy = arr1[gridX][gridY];
+  if (xy == 0) {
+    arr1[gridX][gridY] = 1;
+  }
+  else if (xy == 1) {
+    arr1[gridX][gridY] = 0;
+  }
+
+  drawGrid(arr1, canvas_input, ctx_input);
+  
+  //calculer valeur des bandes & code DX
+  var valeur_part1 = 0
+  var valeur_part2 = 0
+  
+   for (var i=6;i<13;i++) {
+	valeur_part1 = valeur_part1 + arr1[i][1] * valeur_bandes[i]
+   }
+  
+   for (var i=14;i<18;i++) {
+	valeur_part2 = valeur_part2 + arr1[i][1] * valeur_bandes[i]
+   }
+   
+  var code_dx = String(16 * valeur_part1 + valeur_part2).padStart(6, '0')
+  
+  //mise à jour de l'affichage
+  document.getElementById("valeur1").textContent="Valeur partie 1 = " + valeur_part1;
+  document.getElementById("valeur2").textContent="Valeur partie 2 = " + valeur_part2;
+  document.getElementById("valeur3").textContent="Code DX = " + code_dx;
+  
+}
+
+canvas_input.addEventListener('mousedown', mouseClick, false);
+</script>
